@@ -1,9 +1,10 @@
 package com.example.rentmatch.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "property_type")
+@Table(name = "property_media")
 public class PropertyMedia {
 
     @Id
@@ -17,6 +18,7 @@ public class PropertyMedia {
     // Many media belong to one property
     @ManyToOne
     @JoinColumn(name = "property_id")
+    @JsonIgnore
     private Property property;
 
     public PropertyMedia() {

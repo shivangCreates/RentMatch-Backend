@@ -24,7 +24,8 @@ public class UserService {
     @Autowired
     private JwtUtil jwtUtil;
 
-    public User UserRegistration(UserRegistrationRequest request) {
+    public User UserRegistration(UserRegistrationRequest request)
+    {
 
         User user = new User();
 

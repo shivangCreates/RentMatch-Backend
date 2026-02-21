@@ -9,7 +9,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
-
 @RestController
 @RequestMapping("/api/properties")
 @CrossOrigin(origins = "*")
@@ -18,9 +17,9 @@ public class PropertyController {
     @Autowired
     private PropertyService propertyService;
 
-    // CREATE PROPERTY API
+    // CREATE PROPERTY
     @PostMapping("/create")
-    public ResponseEntity<?> UploadPost(
+    public ResponseEntity<?> createProperty(
             @RequestParam String title,
             @RequestParam String description,
             @RequestParam Double price,
@@ -28,45 +27,35 @@ public class PropertyController {
             @RequestParam String propertyType,
             @RequestParam MultipartFile[] files,
             java.security.Principal principal
-    ) {
+    ) throws IOException {
 
-        try {
+        String email = principal.getName();
 
-            String email = principal.getName();
-
-            Property property = propertyService.createProperty(
-                    title,
-                    description,
-                    price,
-                    location,
-                    propertyType,
-                    email,
-                    files
-            );
-
-            return ResponseEntity.ok(property);
-
-        } catch (Exception e) {
-
-            return ResponseEntity.internalServerError()
-                    .body(e.getMessage());
-        }
-    }
-    @GetMapping
-    public ResponseEntity<?> getAllProperties() {
-
-        List<Property> properties = propertyService.getAllProperties();
-
-        return ResponseEntity.ok(properties);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getProperty(@PathVariable Long id) {
-
-        Property property = propertyService.getPropertyById(id);
+        Property property = propertyService.createProperty(
+                title, description, price, location, propertyType, email, files
+        );
 
         return ResponseEntity.ok(property);
     }
+
+
+    // GET ALL (PUBLIC API)
+    @GetMapping
+    public ResponseEntity<?> getAllProperties() {
+
+        return ResponseEntity.ok(propertyService.getAllProperties());
+    }
+
+
+    // GET SINGLE (PUBLIC API)
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getProperty(@PathVariable Long id) {
+
+        return ResponseEntity.ok(propertyService.getPropertyById(id));
+    }
+
+
+    // UPDATE PROPERTY (SECURED)
     @PutMapping("/{id}")
     public ResponseEntity<?> updateProperty(
             @PathVariable Long id,
@@ -75,20 +64,31 @@ public class PropertyController {
             @RequestParam Double price,
             @RequestParam String location,
             @RequestParam String propertyType,
-            @RequestParam(required = false) MultipartFile[] files
+            @RequestParam(required = false) MultipartFile[] files,
+            java.security.Principal principal
     ) throws IOException {
 
-        Property updated = propertyService.updateProperty(
-                id, title, description, price, location, propertyType, files
+        String email = principal.getName();
+
+        Property property = propertyService.updateProperty(
+                id, title, description, price, location, propertyType, email, files
         );
 
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(property);
     }
+
+
+    // DELETE PROPERTY (SECURED)
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteProperty(@PathVariable Long id) {
+    public ResponseEntity<?> deleteProperty(
+            @PathVariable Long id,
+            java.security.Principal principal
+    ) {
 
-        String message = propertyService.deleteProperty(id);
+        String email = principal.getName();
 
-        return ResponseEntity.ok(message);
+        return ResponseEntity.ok(
+                propertyService.deleteProperty(id, email)
+        );
     }
 }

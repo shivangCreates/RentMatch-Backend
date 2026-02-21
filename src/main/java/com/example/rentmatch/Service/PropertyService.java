@@ -85,64 +85,71 @@
                 return propertyRepository.save(savedProperty);
             }
 
+            //to get all the properties
             public List<Property> getAllProperties() {
                 return propertyRepository.findAll();
             }
+
+            //to get single property
             public Property getPropertyById(Long id) {
 
                 return propertyRepository.findById(id)
                         .orElseThrow(() -> new RuntimeException("Property not found"));
             }
 
-
-            public Property updateProperty(Long id,
-                                           String title,
-                                           String description,
-                                           Double price,
-                                           String location,
-                                           String propertyType,
-                                           MultipartFile[] files) throws IOException {
+            //To update property
+            public Property updateProperty(
+                    Long id,
+                    String title,
+                    String description,
+                    Double price,
+                    String location,
+                    String propertyType,
+                    String email,
+                    MultipartFile[] files
+            ) throws IOException {
 
                 Property property = propertyRepository.findById(id)
                         .orElseThrow(() -> new RuntimeException("Property not found"));
 
-                // update basic fields
+                // 🔥 OWNER CHECK (MOST IMPORTANT)
+                if (!property.getOwner().getEmail().equals(email)) {
+
+                    throw new RuntimeException("You can update only your property");
+                }
+
                 property.setTitle(title);
                 property.setDescription(description);
                 property.setPrice(price);
                 property.setLocation(location);
                 property.setPropertyType(propertyType);
 
-                // update media if new files provided
+                // update media
                 if (files != null && files.length > 0) {
 
-                    // clear old media
                     property.getMediaList().clear();
 
                     List<PropertyMedia> mediaList = new ArrayList<>();
 
                     for (MultipartFile file : files) {
 
-                        if (!file.isEmpty()) {
+                        String filename = System.currentTimeMillis()
+                                + "_" + file.getOriginalFilename();
 
-                            String filename = System.currentTimeMillis()
-                                    + "_" + file.getOriginalFilename();
+                        String filepath = uploadDir + filename;
 
-                            String filePath = uploadDir + filename;
+                        File dest = new File(filepath);
+                        dest.getParentFile().mkdirs();
 
-                            File dest = new File(filePath);
-                            dest.getParentFile().mkdirs();
+                        file.transferTo(dest);
 
-                            file.transferTo(dest);
+                        PropertyMedia media = new PropertyMedia();
 
-                            PropertyMedia media = new PropertyMedia();
+                        media.setFilePath(filepath);
+                        media.setFileType(file.getContentType());
+                        media.setProperty(property);
 
-                            media.setFilePath(filePath);
-                            media.setFileType(file.getContentType());
-                            media.setProperty(property);
-
-                            mediaList.add(media);
-                        }
+                        mediaList.add(media);
                     }
 
                     property.setMediaList(mediaList);
@@ -150,10 +157,18 @@
 
                 return propertyRepository.save(property);
             }
-            public String deleteProperty(Long id) {
+
+            //Delete Property By Applying Security
+            public String deleteProperty(Long id, String email) {
 
                 Property property = propertyRepository.findById(id)
                         .orElseThrow(() -> new RuntimeException("Property not found"));
+
+                // Security check of OWNER
+                if (!property.getOwner().getEmail().equals(email)) {
+
+                    throw new RuntimeException("You can delete only your property");
+                }
 
                 propertyRepository.delete(property);
 
